@@ -1,0 +1,61 @@
+#! /usr/bin/python3
+
+import socket
+import argparse
+from time import sleep
+from os import system as s
+from threading import Thread as th
+
+def logo():
+    print(
+    """
+________              ____________                      ____
+\       \            |\          /                      \   |
+ |      | _____  ____| \__    __/    ____   ____   _____ |  |
+ |   |  |/  _  \/      |  |  |\   /|/    \ /    \ /  _  \|  |
+ |      |    __/|  |   |  |  | |_| |   |  |   |  |    __/|  |__
+/_______/\_____/\____|_/ /____\___|_\_/ \_/\_/ \_/\_____/\_____\
+
+By DedSpace - Keep your Serveo tunnels alive!
+
+BTC Address: bc1qds8uqnt4ga0zn9ftrm45cq9u9hfct0qluqes5a
+    """
+    )
+
+def parseArgs():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-r", "--remote", help="Specify the remote port to connect to.", metavar="REMOTE PORT")
+    parser.add_argument("-l", "--local", help="Specify the local port to connect to.", metavar="LOCAL PORT")
+    args = parser.parse_args()
+    return args
+
+def keepAlive(target, die=False):
+    host, port = target.split(":")
+    sleep(15)
+    print("Initiating keep alive...\n")
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((host, int(port)))
+    print("Keeping connection alive.  Press Ctrl+C to close connection.")
+    while True:
+        sock.sendall(b"")
+        sleep(10)
+
+def makeTunnel(myPort, theirPort):
+    print("Establishing tunnel, please wait...")
+    s("ssh -R "+theirPort+":localhost:"+myPort+" serveo.net")
+
+def main():
+    logo()
+    arguments = parseArgs()
+    if arguments.remote == None or arguments.local == None:
+        print("Please specify local and remote ports.\nFor more information, please run \"DedTunnel -h\".\nExiting...")
+        exit()
+    input("Please make sure your service/listener is running.\nPress Enter to continue...")
+    access = ["serveousercontent.com:"+arguments.remote]    
+    t1 = th(target=makeTunnel, args=(arguments.local, arguments.remote))
+    t2 = th(target=keepAlive,  args=(access))
+    t2.start()
+    t1.start()
+
+if __name__ == "__main__":
+    main()
